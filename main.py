@@ -1,6 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
+import unicodedata 
 
 load_dotenv()
 chave = os.getenv("LASTFM_API_KEY")
@@ -162,10 +163,24 @@ def buscar_sobre(artista):
         return "Sem informações disponíveis."
     return resumo
 
+def normalizar(nome):
+    nome = nome.strip().lower()
+    decomposto = unicodedata.normalize("NFD", nome)#separa o acento da letra, tipo a ´ 
+
+    sem_acento = ""
+    for letra in decomposto:
+        if unicodedata.category(letra) != "Mn":  #pega o acento 
+            sem_acento += letra #pega so a letra 
+
+    return sem_acento 
+
 # --------------------
 
 
 artistas = []
+artistas_normalizados = []
+
+
 
 for i in range(1, 4):
     nome = pedir_artista(i)
@@ -173,14 +188,26 @@ for i in range(1, 4):
 
 listar_artistas(artistas)
 
+
+for artista in artistas:
+    artistas_normalizados.append(normalizar(artista))
+
+
 # candidatos = sugestões que o usuário NÃO digitou
 candidatos = []
+candidatos_normalizados = []
 for artista in artistas:
     for similar in buscar_similares(artista):
-        if similar not in artistas and similar not in candidatos:
+        nome_normalizado = normalizar(similar)
+        if nome_normalizado not in artistas_normalizados and nome_normalizado not in candidatos_normalizados:
             candidatos.append(similar)
+            candidatos_normalizados.append(nome_normalizado)
+
 
 aceitou = False
+
+
+
 
 while candidatos:
     artista_da_vez = escolher_candidato(artistas, candidatos)
